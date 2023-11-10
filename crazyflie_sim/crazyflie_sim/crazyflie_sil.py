@@ -204,7 +204,22 @@ class CrazyflieSIL:
         self.cmdHl_pos = copy_svec(self.setpoint.position)
         self.cmdHl_vel = copy_svec(self.setpoint.velocity)
         self.cmdHl_yaw = yaw
+    
+    def cmdWorldVel(self, vel, yawrate):
+        self.mode = CrazyflieSIL.MODE_LOW_VELOCITY
+        self.setpoint.velocity.x = vel[0]
+        self.setpoint.velocity.y = vel[1]
+        self.setpoint.velocity.z = vel[2]
+        
+        self.setpoint.attitudeRate.yaw = np.degrees(yawrate)
+        self.setpoint.mode.x = firm.modeVelocity
+        self.setpoint.mode.y = firm.modeVelocity
+        self.setpoint.mode.z = firm.modeVelocity
+        self.setpoint.mode.yaw = firm.modeVelocity
 
+        self.cmdHl_vel = copy_svec(self.setpoint.velocity)
+        
+        
     # def cmdPosition(self, pos, yaw = 0):
     #     self.mode = CrazyflieSIL.MODE_LOW_POSITION
     #     self.setState.pos = firm.mkvec(*pos)
@@ -296,8 +311,8 @@ class CrazyflieSIL:
         if self.controller is None:
             return None
 
-        if self.mode != CrazyflieSIL.MODE_HIGH_POLY:
-            return sim_data_types.Action([0, 0, 0, 0])
+        #if self.mode != CrazyflieSIL.MODE_HIGH_POLY:
+        #    return sim_data_types.Action([0, 0, 0, 0])
 
         time_in_seconds = self.time_func()
         # ticks is essentially the time in milliseconds as an integer

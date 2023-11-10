@@ -148,6 +148,12 @@ class CrazyflieServer(Node):
                 10
             )
             self.create_subscription(
+                Twist,
+                name + '/twist_cmd',
+                partial(self._cmd_vel_world, name=name),
+                10
+            )
+            self.create_subscription(
                 FullState,
                 name + '/cmd_full_state',
                 partial(self._cmd_full_state_changed, name=name),
@@ -312,6 +318,16 @@ class CrazyflieServer(Node):
         Controls the attitude and thrust of the crazyflie with teleop.
         """
         self.get_logger().info('cmd_vel_legacy not yet implemented')
+    
+    def _cmd_vel_world(self, msg, name=''):
+        """
+        Topic update callback.
+
+        Controls the world velocity.
+        """
+        vel = [msg.linear.x,msg.linear.y,msg.linear.z]
+        yawrate = msg.angular.z
+        self.cfs[name].cmdWorldVel(vel,yawrate)
 
     def _cmd_hover_changed(self, msg, name=''):
         """
@@ -326,8 +342,8 @@ class CrazyflieServer(Node):
              msg.pose.orientation.x,
              msg.pose.orientation.y,
              msg.pose.orientation.z]
-        rpy = rowan.to_euler(q)
-
+        rpy = rowan.to_euler(q,convention='xyz')
+        self.get_logger().info(f'rpy {rpy}')
         self.cfs[name].cmdFullState(
             [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z],
             [msg.twist.linear.x, msg.twist.linear.y, msg.twist.linear.z],

@@ -1,0 +1,5 @@
+/vel_mux:
+  ros__parameters:
+    frequency: 100  # set to 0, to disable manual flight modes
+    robot_prefix: "/cf231"
+    incoming_twist_topic: "/cmd_vel_legacy"

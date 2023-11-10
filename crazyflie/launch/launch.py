@@ -76,11 +76,11 @@ def generate_launch_description():
             name='teleop',
             remappings=[
                 ('emergency', 'all/emergency'),
-                ('takeoff', 'cf6/takeoff'),
-                ('land', 'cf6/land'),
-                ('cmd_vel_legacy', 'cf6/cmd_vel_legacy'),
-                ('cmd_full_state', 'cf6/cmd_full_state'),
-                ('notify_setpoints_stop', 'cf6/notify_setpoints_stop'),
+                ('takeoff', 'drone1/takeoff'),
+                ('land', 'drone1/land'),
+                ('cmd_vel_legacy', 'drone1/cmd_vel_legacy'),
+                ('cmd_full_state', 'drone1/cmd_full_state'),
+                ('notify_setpoints_stop', 'drone1/notify_setpoints_stop'),
             ],
             parameters=[teleop_params]
         ),

@@ -1,37 +1,60 @@
 # named list of all robots
 robots:
-  cf231:
+  drone1:
     enabled: true
-    uri: radio://0/80/2M/E7E7E7E7E7
+    uri: radio://0/80/2M/E7E7E7E701
     initial_position: [0, 0, 0]
     type: cf21  # see robot_types
-    # firmware_params:
-    #   kalman:
-    #     pNAcc_xy: 1.0 # default 0.5
-    # firmware_logging:
-    #   enabled: true
-    #   custom_topics:
-    #     topic_name3: 
-    #       frequency: 1
-    #       vars: ["acc.x", "acc.y"]
-  cf5:
-    enabled: false
-    uri: radio://0/80/2M/E7E7E7E705
-    initial_position: [0, -0.5, 0]
+  drone2:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E702
+    initial_position: [0, 1., 0]
     type: cf21  # see robot_types
-    # firmware_params:
-    #   kalman:
-    #     pNAcc_xy: 1.0 # default 0.5
-    #firmware_logging:
-    #  custom_topics:
-    #    topic_name3: 
-    #      frequency: 1
-    #      vars: ["acc.x", "acc.y", "acc.z"]
+  drone3:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E703
+    initial_position: [0, -1., 0]
+    type: cf21  # see robot_types
+  drone4:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E704
+    initial_position: [1, 0., 0]
+    type: cf21  # see robot_types
+  drone5:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E705
+    initial_position: [-1, 0., 0]
+    type: cf21  # see robot_types
+  drone6:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E706
+    initial_position: [1, 1., 0]
+    type: cf21  # see robot_types
+  drone7:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E707
+    initial_position: [-1., -1., 0]
+    type: cf21  # see robot_types
+  drone8:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E708
+    initial_position: [2, 0., 0]
+    type: cf21  # see robot_types
+  drone9:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E709
+    initial_position: [-2, 0., 0]
+    type: cf21  # see robot_types
+  drone10:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E710
+    initial_position: [0, 2., 0]
+    type: cf21  # see robot_types
 # Definition of the various robot types
 robot_types:
   cf21:
     motion_capture:
-      enabled: true
+      enabled: false
       # only if enabled; see motion_capture.yaml
       marker: default_single_marker
       dynamics: default
