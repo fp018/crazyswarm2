@@ -8,12 +8,12 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include "std_srvs/srv/empty.hpp"
 #include "crazyflie_interfaces/srv/start_trajectory.hpp"
-#include "crazyflie_interfaces/srv/takeoff.hpp"
-#include "crazyflie_interfaces/srv/land.hpp"
+#include "olive_interfaces/srv/takeoff.hpp"
+#include "olive_interfaces/srv/land.hpp"
 #include "crazyflie_interfaces/srv/go_to.hpp"
 #include "crazyflie_interfaces/srv/notify_setpoints_stop.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "crazyflie_interfaces/srv/upload_trajectory.hpp"
@@ -26,11 +26,11 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 using crazyflie_interfaces::srv::GoTo;
-using crazyflie_interfaces::srv::Land;
 using crazyflie_interfaces::srv::NotifySetpointsStop;
 using crazyflie_interfaces::srv::StartTrajectory;
-using crazyflie_interfaces::srv::Takeoff;
 using crazyflie_interfaces::srv::UploadTrajectory;
+using olive_interfaces::srv::Land;
+using olive_interfaces::srv::Takeoff;
 using std_srvs::srv::Empty;
 
 using crazyflie_interfaces::msg::FullState;
@@ -134,7 +134,7 @@ public:
 
     // Topics
 
-    subscription_cmd_vel_world_ = node->create_subscription<geometry_msgs::msg::Twist>(name + "/cmd_vel", rclcpp::SystemDefaultsQoS(), std::bind(&CrazyflieROS::cmd_vel_world, this, _1), sub_opt_cf_cmd);
+    subscription_cmd_vel_world_ = node->create_subscription<geometry_msgs::msg::Twist>(name + "/twist_cmd", rclcpp::SystemDefaultsQoS(), std::bind(&CrazyflieROS::cmd_vel_world, this, _1), sub_opt_cf_cmd);
     subscription_cmd_vel_legacy_ = node->create_subscription<geometry_msgs::msg::Twist>(name + "/cmd_vel_legacy", rclcpp::SystemDefaultsQoS(), std::bind(&CrazyflieROS::cmd_vel_legacy_changed, this, _1), sub_opt_cf_cmd);
     subscription_cmd_full_state_ = node->create_subscription<crazyflie_interfaces::msg::FullState>(name + "/cmd_full_state", rclcpp::SystemDefaultsQoS(), std::bind(&CrazyflieROS::cmd_full_state_changed, this, _1), sub_opt_cf_cmd);
     subscription_cmd_position_ = node->create_subscription<crazyflie_interfaces::msg::Position>(name + "/cmd_position", rclcpp::SystemDefaultsQoS(), std::bind(&CrazyflieROS::cmd_position_changed, this, _1), sub_opt_cf_cmd);
@@ -333,7 +333,7 @@ public:
             int freq = log_config_map["default_topics.pose.frequency"].get<int>();
             RCLCPP_INFO(logger_, "Logging to /pose at %d Hz", freq);
 
-            publisher_pose_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(name + "/pose", 10);
+            publisher_pose_ = node->create_publisher<geometry_msgs::msg::Pose>(name + "/pose", 10);
 
             std::function<void(uint32_t, const logPose *)> cb = std::bind(&CrazyflieROS::on_logging_pose, this, std::placeholders::_1, std::placeholders::_2);
 
@@ -640,26 +640,27 @@ private:
   {
     if (publisher_pose_)
     {
-      geometry_msgs::msg::PoseStamped msg;
-      msg.header.stamp = node_->get_clock()->now();
-      msg.header.frame_id = "world";
+      geometry_msgs::msg::Pose msg;
+      // msg.header.stamp = node_->get_clock()->now();
+      // msg.header.frame_id = "world";
 
-      msg.pose.position.x = data->x;
-      msg.pose.position.y = data->y;
-      msg.pose.position.z = data->z;
+      msg.position.x = data->x;
+      msg.position.y = data->y;
+      msg.position.z = data->z;
 
       float q[4];
       quatdecompress(data->quatCompressed, q);
-      msg.pose.orientation.x = q[0];
-      msg.pose.orientation.y = q[1];
-      msg.pose.orientation.z = q[2];
-      msg.pose.orientation.w = q[3];
+      msg.orientation.x = q[0];
+      msg.orientation.y = q[1];
+      msg.orientation.z = q[2];
+      msg.orientation.w = q[3];
 
       publisher_pose_->publish(msg);
 
       // send a transform for this pose
       geometry_msgs::msg::TransformStamped msg2;
-      msg2.header = msg.header;
+      msg2.header.stamp = node_->get_clock()->now();
+      msg2.header.frame_id = "world";
       msg2.child_frame_id = name_;
       msg2.transform.translation.x = data->x;
       msg2.transform.translation.y = data->y;
@@ -748,7 +749,7 @@ private:
 
   // logging
   std::unique_ptr<LogBlock<logPose>> log_block_pose_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_pose_;
+  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr publisher_pose_;
 
   std::unique_ptr<LogBlock<logScan>> log_block_scan_;
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr publisher_scan_;
