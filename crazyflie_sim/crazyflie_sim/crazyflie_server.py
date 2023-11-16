@@ -10,13 +10,15 @@ from functools import partial
 import importlib
 
 from crazyflie_interfaces.msg import FullState, Hover
-from crazyflie_interfaces.srv import GoTo, Land, Takeoff
+from crazyflie_interfaces.srv import GoTo
+from olive_interfaces.srv import Takeoff, Land
 from crazyflie_interfaces.srv import NotifySetpointsStop, StartTrajectory, UploadTrajectory
 from geometry_msgs.msg import Twist
 import rclpy
 from rclpy.node import Node
 import rowan
 from std_srvs.srv import Empty
+from geometry_msgs.msg import Pose
 
 
 # import BackendRviz from .backend_rviz
@@ -99,6 +101,7 @@ class CrazyflieServer(Node):
                             'all/start_trajectory',
                             self._start_trajectory_callback)
 
+        self.drone_pub : dict = {}
         for name, _ in self.cfs.items():
             self.create_service(
                 Empty,
@@ -159,6 +162,7 @@ class CrazyflieServer(Node):
                 partial(self._cmd_full_state_changed, name=name),
                 10
             )
+            self.drone_pub[name] = self.create_publisher(Pose, name + '/pose', 1)
 
         # step as fast as possible
         max_dt = 0.0 if 'max_dt' not in self._ros_parameters['sim'] \
@@ -185,8 +189,18 @@ class CrazyflieServer(Node):
         states_next = self.backend.step(states_desired, actions)
 
         # update the resulting state
-        for state, (_, cf) in zip(states_next, self.cfs.items()):
+        for state, (name, cf) in zip(states_next, self.cfs.items()):
             cf.setState(state)
+            pose_msg = Pose()
+            pose_msg.position.x = state.pos[0]
+            pose_msg.position.y = state.pos[1]
+            pose_msg.position.z = state.pos[2]
+            pose_msg.orientation.x = state.quat[1]
+            pose_msg.orientation.y = state.quat[2]
+            pose_msg.orientation.z = state.quat[3]
+            pose_msg.orientation.w = state.quat[0]
+            
+            self.drone_pub[name].publish(pose_msg)
 
         for vis in self.visualizations:
             vis.step(self.backend.time(), states_next, states_desired, actions)

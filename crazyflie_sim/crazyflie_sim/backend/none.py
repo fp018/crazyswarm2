@@ -15,7 +15,7 @@ class Backend:
         self.names = names
         self.clock_publisher = node.create_publisher(Clock, 'clock', 10)
         self.t = 0
-        self.dt = 0.1
+        self.dt = 0.001
 
     def time(self) -> float:
         return self.t

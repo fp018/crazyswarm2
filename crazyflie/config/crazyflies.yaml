@@ -20,33 +20,42 @@ robots:
     uri: radio://0/80/2M/E7E7E7E704
     initial_position: [1, 0., 0]
     type: cf21  # see robot_types
+    #firmware_logging:
+    #  enabled: true
+    #  default_topics:
+    #  pose:
+    #    frequency: 1 # Hz
+    #  custom_topics:
+    #    topic_name3: 
+    #      frequency: 100
+    #      vars: ["acc.x", "acc.y", "acc.z"]"""
   drone5:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E705
     initial_position: [-1, 0., 0]
     type: cf21  # see robot_types
   drone6:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E706
-    initial_position: [1, 1., 0]
+    initial_position: [-0.24, -1.5, 0]
     type: cf21  # see robot_types
   drone7:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E707
     initial_position: [-1., -1., 0]
     type: cf21  # see robot_types
   drone8:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E708
-    initial_position: [2, 0., 0]
+    initial_position: [0, 0., 0]
     type: cf21  # see robot_types
   drone9:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E709
     initial_position: [-2, 0., 0]
     type: cf21  # see robot_types
   drone10:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E710
     initial_position: [0, 2., 0]
     type: cf21  # see robot_types
@@ -114,7 +123,7 @@ all:
       enHighLevel: 1
     stabilizer:
       estimator: 2 # 1: complementary, 2: kalman
-      controller: 2 # 1: PID, 2: mellinger
+      controller: 1 # 1: PID, 2: mellinger
     # ring:
     #   effect: 16 # 6: double spinner, 7: solid color, 16: packetRate
     #   solidBlue: 255 # if set to solid color

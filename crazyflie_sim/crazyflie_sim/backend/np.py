@@ -8,7 +8,6 @@ import rowan
 
 from ..sim_data_types import Action, State
 
-
 class Backend:
     """Backend that uses newton-euler rigid-body dynamics implemented in numpy."""
 
@@ -33,8 +32,8 @@ class Backend:
 
         next_states = []
 
-        for uav, action in zip(self.uavs, actions):
-            uav.step(action, self.dt)
+        for i, uav in enumerate(self.uavs):
+            uav.step(actions[i], self.dt)
             next_states.append(uav.state)
 
         # print(states_desired, actions, next_states)
@@ -47,6 +46,7 @@ class Backend:
 
     def shutdown(self):
         pass
+
 
 
 class Quadrotor:
@@ -113,7 +113,7 @@ class Quadrotor:
         q_next = rowan.normalize(
             rowan.calculus.integrate(
                 self.state.quat, self.state.omega, dt))
-
+        
         # mJ = Jw x w + tau_u
         omega_next = self.state.omega + (
             self.inv_J * (np.cross(self.J * self.state.omega, self.state.omega) + tau_u)) * dt

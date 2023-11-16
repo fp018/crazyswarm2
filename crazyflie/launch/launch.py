@@ -62,6 +62,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('backend', default_value='cpp'),
         DeclareLaunchArgument('debug', default_value='False'),
+        DeclareLaunchArgument('teleop', default_value='False'),
+        DeclareLaunchArgument('vis', default_value='False'),
         Node(
             package='motion_capture_tracking',
             executable='motion_capture_tracking_node',
@@ -74,6 +76,7 @@ def generate_launch_description():
             package='crazyflie',
             executable='teleop',
             name='teleop',
+            condition=LaunchConfigurationNotEquals('teleop','False'),
             remappings=[
                 ('emergency', 'all/emergency'),
                 ('takeoff', 'drone1/takeoff'),
@@ -119,10 +122,12 @@ def generate_launch_description():
             package='rviz2',
             namespace='',
             executable='rviz2',
+            condition=LaunchConfigurationEquals('vis','True'),
             name='rviz2',
             arguments=['-d' + os.path.join(get_package_share_directory('crazyflie'), 'config', 'config.rviz')],
             parameters=[{
-                "use_sim_time": True,
+                "use_sim_time": False,
             }]
         ),
+        
     ])

@@ -17,6 +17,7 @@ find_package(crazyflie_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(motion_capture_tracking_interfaces REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(olive_interfaces REQUIRED)
 
 # add dependencies
 add_subdirectory(deps/crazyflie_tools)
@@ -40,6 +41,7 @@ ament_target_dependencies(teleop
   std_srvs
   crazyflie_interfaces
   geometry_msgs
+  olive_interfaces
 )
 
 add_executable(crazyflie_server 

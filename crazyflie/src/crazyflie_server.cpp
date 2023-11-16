@@ -503,7 +503,7 @@ private:
         rollRate, pitchRate, yawRate);
   }
 
-  void cmd_position_changed(const crazyflie_interfaces::msg::Position::SharedPtr &msg)
+  void cmd_position_changed(const crazyflie_interfaces::msg::Position::SharedPtr msg)
   {
     float x = msg->x;
     float y = msg->y;
@@ -512,16 +512,16 @@ private:
     cf_.sendPositionSetpoint(x, y, z, yaw);
   }
 
-  void cmd_vel_world(const geometry_msgs::msg::Twist::SharedPtr &msg)
+  void cmd_vel_world(const geometry_msgs::msg::Twist::SharedPtr msg)
   {
-    float vx = msg.linear.x;
-    float vy = msg.linear.y;
-    float vz = msg.linear.z;
-    float yawrate = msg.angular.z;
-    cf_.sendVelocityWorldSetpoint(vx, vy, vz, yawrate)
+    float vx = msg->linear.x;
+    float vy = msg->linear.y;
+    float vz = msg->linear.z;
+    float yawrate = msg->angular.z;
+    cf_.sendVelocityWorldSetpoint(vx, vy, vz, yawrate);
   }
 
-  void cmd_vel_legacy_changed(const geometry_msgs::msg::Twist::SharedPtr &msg)
+  void cmd_vel_legacy_changed(const geometry_msgs::msg::Twist::SharedPtr msg)
   {
     float roll = msg->linear.y;
     float pitch = -(msg->linear.x);
