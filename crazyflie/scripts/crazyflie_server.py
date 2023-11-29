@@ -21,7 +21,8 @@ from cflib.crazyflie.swarm import CachedCfFactory
 from cflib.crazyflie.swarm import Swarm
 from cflib.crazyflie.log import LogConfig
 
-from crazyflie_interfaces.srv import Takeoff, Land, GoTo, RemoveLogging, AddLogging
+from crazyflie_interfaces.srv import GoTo, RemoveLogging, AddLogging
+from olive_interfaces.srv import Takeoff, Land
 from crazyflie_interfaces.srv import UploadTrajectory, StartTrajectory, NotifySetpointsStop
 from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult, ParameterType
 from crazyflie_interfaces.msg import Hover
@@ -30,7 +31,7 @@ from motion_capture_tracking_interfaces.msg import NamedPoseArray
 
 from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist
-from geometry_msgs.msg import PoseStamped, TransformStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped, Pose
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 
@@ -52,6 +53,13 @@ cf_log_to_ros_param = {
     "double": ParameterType.PARAMETER_DOUBLE,
 }
 
+# Flight modes.
+MODE_IDLE = 0
+MODE_HIGH_POLY = 1
+MODE_LOW_FULLSTATE = 2
+MODE_LOW_POSITION = 3
+MODE_LOW_VELOCITY = 4
+
 class CrazyflieServer(Node):
     def __init__(self):
         super().__init__(
@@ -67,9 +75,10 @@ class CrazyflieServer(Node):
         self.cf_dict = {}
         self.uri_dict = {}
         self.type_dict = {}
+        self.status_mode= {}
         
         # Assign default topic types, variables and callbacks
-        self.default_log_type = {"pose": PoseStamped,
+        self.default_log_type = {"pose": Pose,
                                 "scan": LaserScan,
                                 "odom": Odometry}
         self.default_log_vars = {"pose": ['stateEstimate.x', 'stateEstimate.y', 'stateEstimate.z',
@@ -126,6 +135,7 @@ class CrazyflieServer(Node):
 
             self.swarm._cfs[link_uri].logging = {}
 
+            self.status_mode[link_uri] = MODE_IDLE
             cf_name = self.cf_dict[link_uri]
             cf_type = self.type_dict[link_uri]
 
@@ -241,6 +251,10 @@ class CrazyflieServer(Node):
             self.create_subscription(
                 Twist, name +
                 "/cmd_vel_legacy", partial(self._cmd_vel_legacy_changed, uri=uri), 10
+            )
+            self.create_subscription(
+                Twist, name +
+                "/twist_cmd", partial(self._cmd_vel_worl, uri=uri), 10
             )
             self.create_subscription(
                 Hover, name +
@@ -459,16 +473,16 @@ class CrazyflieServer(Node):
         yaw = radians(data.get('stabilizer.yaw'))
         q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
 
-        msg = PoseStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = self.world_tf_name
-        msg.pose.position.x = x
-        msg.pose.position.y = y
-        msg.pose.position.z = z
-        msg.pose.orientation.x = q[0]
-        msg.pose.orientation.y = q[1]
-        msg.pose.orientation.z = q[2]
-        msg.pose.orientation.w = q[3]
+        msg = Pose()
+        #msg.header.stamp = self.get_clock().now().to_msg()
+        #msg.header.frame_id = self.world_tf_name
+        msg.position.x = x
+        msg.position.y = y
+        msg.position.z = z
+        msg.orientation.x = q[0]
+        msg.orientation.y = q[1]
+        msg.orientation.z = q[2]
+        msg.orientation.w = q[3]
         self.swarm._cfs[uri].logging["pose_publisher"].publish(msg)
 
         t_base = TransformStamped()
@@ -734,10 +748,12 @@ class CrazyflieServer(Node):
                 self.swarm._cfs[link_uri].cf.high_level_commander.land(
                     request.height, duration, group_mask=request.group_mask
                 )
+                self.status_mode[link_uri] = MODE_HIGH_POLY
         else:
             self.swarm._cfs[uri].cf.high_level_commander.land(
                 request.height, duration, group_mask=request.group_mask
             )
+            self.status_mode[uri] = MODE_HIGH_POLY 
 
         return response
 
@@ -842,6 +858,14 @@ class CrazyflieServer(Node):
         self.swarm._cfs[uri].cf.commander.send_setpoint(
             roll, pitch, yawrate, thrust)
 
+    def _cmd_vel_worl(self, msg, uri=""):
+        if self.status_mode[uri] == MODE_IDLE:
+            vx = msg.linear.x
+            vy = msg.linear.y
+            yawrate = msg.angular.z
+            vz = msg.linear.z
+            self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(vx,vy,vz,yawrate)
+    
     def _cmd_hover_changed(self, msg, uri=""):
         """
         Topic update callback to control the hover command

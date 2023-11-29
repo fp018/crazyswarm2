@@ -88,11 +88,6 @@ def generate_launch_description():
             parameters=[teleop_params]
         ),
         Node(
-            package='joy',
-            executable='joy_node',
-            name='joy_node' # by default id=0
-        ),
-        Node(
             package='crazyflie',
             executable='crazyflie_server.py',
             condition=LaunchConfigurationEquals('backend','cflib'),

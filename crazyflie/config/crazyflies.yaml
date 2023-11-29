@@ -1,22 +1,22 @@
 # named list of all robots
 robots:
   drone1:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E701
     initial_position: [0, 0, 0]
     type: cf21  # see robot_types
   drone2:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E702
     initial_position: [0, 1., 0]
     type: cf21  # see robot_types
   drone3:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E703
     initial_position: [0, -1., 0]
     type: cf21  # see robot_types
   drone4:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E704
     initial_position: [1, 0., 0]
     type: cf21  # see robot_types
@@ -30,7 +30,7 @@ robots:
     #      frequency: 100
     #      vars: ["acc.x", "acc.y", "acc.z"]"""
   drone5:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E705
     initial_position: [-1, 0., 0]
     type: cf21  # see robot_types
@@ -45,7 +45,7 @@ robots:
     initial_position: [-1., -1., 0]
     type: cf21  # see robot_types
   drone8:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E708
     initial_position: [0, 0., 0]
     type: cf21  # see robot_types
@@ -108,8 +108,8 @@ all:
     default_topics:
      # remove to disable default topic
       pose:
-        frequency: 100 # Hz
-    #custom_topics:
+        frequency: 30 # Hz
+    #ustom_topics:
     #  topic_name1:
     #    frequency: 10 # Hz
     #    vars: ["stateEstimateZ.x", "stateEstimateZ.y", "stateEstimateZ.z", "pm.vbat"]
