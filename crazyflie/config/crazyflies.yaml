@@ -35,7 +35,7 @@ robots:
     initial_position: [-1, 0., 0]
     type: cf21  # see robot_types
   drone6:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E706
     initial_position: [-0.24, -1.5, 0]
     type: cf21  # see robot_types
@@ -108,7 +108,9 @@ all:
     default_topics:
      # remove to disable default topic
       pose:
-        frequency: 30 # Hz
+        frequency: 100 # Hz
+      #odom:
+      #  frequency: 100 # Hz
     #ustom_topics:
     #  topic_name1:
     #    frequency: 10 # Hz
@@ -133,8 +135,10 @@ all:
     locSrv:
       extPosStdDev: 1e-3
       extQuatStdDev: 0.5e-1
-    # kalman:
-    #   resetEstimation: 1
+    kalman:
+      pNVel: 0.3
+      mNGyro_rollpitch: 0.4
+
   broadcasts:
     num_repeats: 15 # number of times broadcast commands are repeated
     delay_between_repeats_ms: 1 # delay in milliseconds between individual repeats

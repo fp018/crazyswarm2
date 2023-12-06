@@ -59,6 +59,9 @@ MODE_HIGH_POLY = 1
 MODE_LOW_FULLSTATE = 2
 MODE_LOW_POSITION = 3
 MODE_LOW_VELOCITY = 4
+MODE_VELOCITY = 5
+MODE_TAKEOFF = 6
+MODE_LAND = 7
 
 class CrazyflieServer(Node):
     def __init__(self):
@@ -76,6 +79,9 @@ class CrazyflieServer(Node):
         self.uri_dict = {}
         self.type_dict = {}
         self.status_mode= {}
+        self.takeoff_height = {}
+        self.poses ={}
+        self.twist = {}
         
         # Assign default topic types, variables and callbacks
         self.default_log_type = {"pose": Pose,
@@ -119,7 +125,7 @@ class CrazyflieServer(Node):
         factory = CachedCfFactory(rw_cache="./cache")
         self.swarm = Swarm(self.uris, factory=factory)
         self.swarm.fully_connected_crazyflie_cnt = 0
-
+        
         # Initialize logging, services and parameters for each crazyflie
         for link_uri in self.uris:
 
@@ -133,6 +139,9 @@ class CrazyflieServer(Node):
                 self._connection_failed
             )
 
+            self.takeoff_height[link_uri] = 0.
+            self.poses[link_uri] = Pose()
+            self.twist[link_uri] = Twist()
             self.swarm._cfs[link_uri].logging = {}
 
             self.status_mode[link_uri] = MODE_IDLE
@@ -268,7 +277,17 @@ class CrazyflieServer(Node):
                 NamedPoseArray, "/poses", 
                 self._poses_changed, qos_profile
             )
-
+            
+        timer_period = 0.01  # seconds
+        self.timer = self.create_timer(timer_period, self.run)
+        
+    def run(self):
+        for uri in self.status_mode.keys():
+            if self.status_mode[uri] == MODE_TAKEOFF:
+                if self.poses[uri].position.z > self.takeoff_height[uri]-0.1:
+                    self.status_mode[uri] = MODE_VELOCITY
+                
+ 
     def _init_default_logblocks(self, prefix, link_uri, list_logvar, global_logging_enabled, topic_type):
         """
         Prepare default logblocks as defined in crazyflies.yaml
@@ -385,7 +404,7 @@ class CrazyflieServer(Node):
                             self._log_error_callback)
                         lg_custom.start()
                     except KeyError as e:
-                        self.get_logger().info(f'{link_uri}: Could not start log configuration,'
+                        self.get_logger().info('{link_uri}: Could not start log configuration,'
                                                '{} not found in TOC'.format(str(e)))
                     except AttributeError:
                         self.get_logger().info(
@@ -484,6 +503,8 @@ class CrazyflieServer(Node):
         msg.orientation.z = q[2]
         msg.orientation.w = q[3]
         self.swarm._cfs[uri].logging["pose_publisher"].publish(msg)
+        
+        self.poses[uri] = msg
 
         t_base = TransformStamped()
         t_base.header.stamp = self.get_clock().now().to_msg()
@@ -536,6 +557,8 @@ class CrazyflieServer(Node):
         msg.twist.twist.angular.z = yawrate
         msg.twist.twist.angular.y = pitchrate
         msg.twist.twist.angular.x = rollrate
+        
+        self.twist[uri] = msg.twist.twist
 
         self.swarm._cfs[uri].logging["odom_publisher"].publish(msg)
 
@@ -721,13 +744,19 @@ class CrazyflieServer(Node):
         )
         if uri == "all":
             for link_uri in self.uris:
+                self.takeoff_height[link_uri] = request.height 
                 self.swarm._cfs[link_uri].cf.high_level_commander.takeoff(
                     request.height, duration
                 )
+                self.status_mode[link_uri] = MODE_TAKEOFF
+                
         else:
             self.swarm._cfs[uri].cf.high_level_commander.takeoff(
                 request.height, duration
             )
+            self.takeoff_height[uri] = request.height
+            self.status_mode[uri] = MODE_TAKEOFF
+            
 
         return response
 
@@ -745,15 +774,18 @@ class CrazyflieServer(Node):
         )
         if uri == "all":
             for link_uri in self.uris:
+                self._notify_setpoints_stop_callback(request, response, uri=link_uri)
                 self.swarm._cfs[link_uri].cf.high_level_commander.land(
                     request.height, duration, group_mask=request.group_mask
                 )
-                self.status_mode[link_uri] = MODE_HIGH_POLY
+                self.status_mode[link_uri] = MODE_LAND
         else:
+            self._notify_setpoints_stop_callback(request, response, uri=uri)
             self.swarm._cfs[uri].cf.high_level_commander.land(
                 request.height, duration, group_mask=request.group_mask
             )
-            self.status_mode[uri] = MODE_HIGH_POLY 
+            self.status_mode[uri] = MODE_LAND
+            
 
         return response
 
@@ -859,11 +891,18 @@ class CrazyflieServer(Node):
             roll, pitch, yawrate, thrust)
 
     def _cmd_vel_worl(self, msg, uri=""):
-        if self.status_mode[uri] == MODE_IDLE:
-            vx = msg.linear.x
-            vy = msg.linear.y
+        if self.status_mode[uri] == MODE_VELOCITY:
+            vx = msg.linear.x 
+            vy = msg.linear.y 
+            vz = msg.linear.z 
             yawrate = msg.angular.z
-            vz = msg.linear.z
+            
+            #vx = vx + (vx - self.twist[uri].linear.x)*2
+            #vy = vy + (vy - self.twist[uri].linear.y)*2
+            #vz = vz + (vz - self.twist[uri].linear.z)*2
+            
+            #self.get_logger().info(f"{uri}: vel {self.twist[uri].linear.x} {self.twist[uri].linear.y} {self.twist[uri].linear.z} {yawrate}")
+            #self.swarm._cfs[uri].cf.commander.send_full_state_setpoint([x,y,z], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate)
             self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(vx,vy,vz,yawrate)
     
     def _cmd_hover_changed(self, msg, uri=""):
