@@ -40,6 +40,7 @@ from tf2_ros import TransformBroadcaster
 
 from functools import partial
 from math import degrees, radians, pi, isnan
+import numpy as np
 
 cf_log_to_ros_param = {
     "uint8_t": ParameterType.PARAMETER_INTEGER,
@@ -82,6 +83,8 @@ class CrazyflieServer(Node):
         self.takeoff_height = {}
         self.poses ={}
         self.twist = {}
+        self.ai = {}
+        self.setpoint = {}
         
         # Assign default topic types, variables and callbacks
         self.default_log_type = {"pose": Pose,
@@ -142,6 +145,8 @@ class CrazyflieServer(Node):
             self.takeoff_height[link_uri] = 0.
             self.poses[link_uri] = Pose()
             self.twist[link_uri] = Twist()
+            self.ai[link_uri] = np.zeros(3)
+            self.setpoint[link_uri] = []
             self.swarm._cfs[link_uri].logging = {}
 
             self.status_mode[link_uri] = MODE_IDLE
@@ -286,6 +291,21 @@ class CrazyflieServer(Node):
             if self.status_mode[uri] == MODE_TAKEOFF:
                 if self.poses[uri].position.z > self.takeoff_height[uri]-0.1:
                     self.status_mode[uri] = MODE_VELOCITY
+                    
+
+            if self.status_mode[uri] == MODE_VELOCITY:
+                
+                setpoint = self.setpoint[uri]
+                if len(setpoint):
+                    self.ai[uri][0] = self.ai[uri][0] + 0.01*(setpoint[1][0] - self.twist[uri].linear.x)
+                    self.ai[uri][1] = self.ai[uri][1] + 0.01*(setpoint[1][1]- self.twist[uri].linear.y)
+                    self.ai[uri][2] = self.ai[uri][2] + 0.01*(setpoint[1][2] - self.twist[uri].linear.z)
+                    
+                    self.ai[uri] = np.clip(self.ai[uri], -0.02,0.02)
+                    
+                    self.swarm._cfs[uri].cf.commander.send_full_state_setpoint(setpoint)
+                    #self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(setpoint[0][0],setpoint[0][1],setpoint[0][2],setpoint[-1])
+    
                 
  
     def _init_default_logblocks(self, prefix, link_uri, list_logvar, global_logging_enabled, topic_type):
@@ -901,10 +921,18 @@ class CrazyflieServer(Node):
             #vy = vy + (vy - self.twist[uri].linear.y)*2
             #vz = vz + (vz - self.twist[uri].linear.z)*2
             
+            x = self.poses[uri].x + vx*0.01
+            y = self.poses[uri].y + vy*0.01
+            z = self.poses[uri].z + vz*0.01
+            
+            ax = 0.1*(vx - self.twist[uri].linear.x) + 0.01*self.ai[uri][0]
+            ay = 0.1*(vy - self.twist[uri].linear.y) + 0.01*self.ai[uri][1]
+            az = 0.1*(vz - self.twist[uri].linear.z) + 0.01*self.ai[uri][2]
+            self.setpoint[uri] = [[x,y,z], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate]
+            
+            
             #self.get_logger().info(f"{uri}: vel {self.twist[uri].linear.x} {self.twist[uri].linear.y} {self.twist[uri].linear.z} {yawrate}")
-            #self.swarm._cfs[uri].cf.commander.send_full_state_setpoint([x,y,z], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate)
-            self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(vx,vy,vz,yawrate)
-    
+            
     def _cmd_hover_changed(self, msg, uri=""):
         """
         Topic update callback to control the hover command

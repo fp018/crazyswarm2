@@ -1,7 +1,7 @@
 /motion_capture_tracking:
   ros__parameters:
-    type: "vicon"
-    hostname: "192.168.30.1"
+    type: "qualisys"
+    hostname: "10.135.2.39"
 
     mode: "motionCapture" # one of motionCapture,libRigidBodyTracker
 
