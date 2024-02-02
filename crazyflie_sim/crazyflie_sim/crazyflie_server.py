@@ -165,9 +165,10 @@ class CrazyflieServer(Node):
             self.drone_pub[name] = self.create_publisher(Pose, name + '/pose', 1)
 
         # step as fast as possible
-        max_dt = 0.0 if 'max_dt' not in self._ros_parameters['sim'] \
+        self.max_dt = 0.0 if 'max_dt' not in self._ros_parameters['sim'] \
             else self._ros_parameters['sim']['max_dt']
-        self.timer = self.create_timer(max_dt, self._timer_callback)
+        print(self.max_dt)
+        self.timer = self.create_timer(self.max_dt, self._timer_callback)
         self.is_shutdown = False
 
     def on_shutdown_callback(self):
@@ -180,8 +181,8 @@ class CrazyflieServer(Node):
 
     def _timer_callback(self):
         # update setpoint
-        states_desired = [cf.getSetpoint() for _, cf in self.cfs.items()]
-
+        states_desired = [cf.getSetpoint(self.max_dt) for _, cf in self.cfs.items()]
+        
         # execute the control loop
         actions = [cf.executeController() for _, cf in self.cfs.items()]
 
@@ -244,7 +245,7 @@ class CrazyflieServer(Node):
         self.get_logger().info(
             f'land(height={request.height} m,'
             + f'duration={duration} s,'
-            + f'group_mask={request.group_mask})'
+            + f'group_mask={request.group_mask}) {name}'
         )
         cfs = self.cfs if name == 'all' else {name: self.cfs[name]}
         for _, cf in cfs.items():

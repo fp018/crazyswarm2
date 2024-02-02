@@ -36,7 +36,9 @@ class CrazyflieSIL:
     MODE_LOW_FULLSTATE = 2
     MODE_LOW_POSITION = 3
     MODE_LOW_VELOCITY = 4
-
+    MODE_HIGH_TAKEOFF = 5
+    MODE_HIGH_LAND = 6
+    
     def __init__(self, name, initialPosition, controller_name, time_func):
         # Core.
         self.name = name
@@ -45,7 +47,7 @@ class CrazyflieSIL:
         self.time_func = time_func
 
         # Commander.
-        self.mode = CrazyflieSIL.MODE_IDLE
+        self.mode = CrazyflieSIL.MODE_HIGH_TAKEOFF
         self.planner = firm.planner()
         firm.plan_init(self.planner)
         self.trajectories = {}
@@ -117,7 +119,7 @@ class CrazyflieSIL:
 
     def land(self, targetHeight, duration, groupMask=0):
         if self._isGroup(groupMask):
-            self.mode = CrazyflieSIL.MODE_HIGH_POLY
+            self.mode = CrazyflieSIL.MODE_HIGH_LAND
             targetYaw = 0.0
             firm.plan_land(
                 self.planner,
@@ -220,17 +222,6 @@ class CrazyflieSIL:
             self.setpoint.velocity.y = vel[1]
             self.setpoint.velocity.z = vel[2]
             self.setpoint.attitudeRate.yaw = np.degrees(yawrate)
-            self.setpoint.position.x += vel[0]*0.01
-            self.setpoint.position.y += vel[1]*0.01
-            self.setpoint.position.z += vel[2]*0.01
-            self.setpoint.attitude.yaw = self.setpoint.attitude.yaw + np.degrees(yawrate)*0.01
-            self.setpoint.mode.quat == firm.modeDisable
-            
-            
-            self.setpoint.mode.x = firm.modeVelocity
-            self.setpoint.mode.y = firm.modeVelocity
-            self.setpoint.mode.z = firm.modeVelocity
-            self.setpoint.mode.yaw = firm.modeVelocity
         
         
     # def cmdPosition(self, pos, yaw = 0):
@@ -249,8 +240,8 @@ class CrazyflieSIL:
     #     # TODO: set mode to MODE_IDLE?
     #     pass
 
-    def getSetpoint(self):
-        if self.mode == CrazyflieSIL.MODE_HIGH_POLY:
+    def getSetpoint(self, max_dt):
+        if self.mode == CrazyflieSIL.MODE_HIGH_POLY or self.mode == CrazyflieSIL.MODE_HIGH_LAND:
             # See logic in crtp_commander_high_level.c
             ev = firm.plan_current_goal(self.planner, self.time_func())
             if firm.is_traj_eval_valid(ev):
@@ -279,6 +270,22 @@ class CrazyflieSIL:
                 self.cmdHl_vel = copy_svec(ev.vel)
                 self.cmdHl_yaw = ev.yaw
 
+        if (self.mode == CrazyflieSIL.MODE_LOW_VELOCITY ):
+            self.setpoint.position.x += self.setpoint.velocity.x*max_dt
+            self.setpoint.position.y += self.setpoint.velocity.y*max_dt
+            self.setpoint.position.z += self.setpoint.velocity.z*max_dt
+            self.setpoint.attitude.yaw = self.setpoint.attitude.yaw + self.setpoint.attitudeRate.yaw *max_dt
+            self.setpoint.mode.quat == firm.modeDisable
+            
+            
+            self.setpoint.mode.x = firm.modeVelocity
+            self.setpoint.mode.y = firm.modeVelocity
+            self.setpoint.mode.z = firm.modeVelocity
+            self.setpoint.mode.yaw = firm.modeVelocity
+            
+            self.cmdHl_pos = copy_svec(self.setpoint.position)
+            self.cmdHl_vel = copy_svec(self.setpoint.velocity)
+            self.cmdHl_yaw = self.setpoint.attitude.yaw
         return self._fwsetpoint_to_sim_data_types_state(self.setpoint)
 
         # # else:
@@ -326,7 +333,6 @@ class CrazyflieSIL:
 
         if self.mode == CrazyflieSIL.MODE_HIGH_POLY:
             self.is_finished()
-        
         
         time_in_seconds = self.time_func()
         # ticks is essentially the time in milliseconds as an integer

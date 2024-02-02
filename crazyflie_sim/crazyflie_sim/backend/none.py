@@ -14,20 +14,20 @@ class Backend:
         self.node = node
         self.names = names
         self.clock_publisher = node.create_publisher(Clock, 'clock', 10)
-        self.t = 0
+        self.t = self.node.get_clock().now().nanoseconds*1e-9
         self.dt = 0.001
 
     def time(self) -> float:
-        return self.t
+        return self.node.get_clock().now().nanoseconds*1e-9-self.t
 
     def step(self, states_desired: list[State], actions: list[Action]) -> list[State]:
         # advance the time
-        self.t += self.dt
+        #self.t = self.node.get_clock().now().seconds_nanoseconds()[0]
 
         # publish the current clock
-        clock_message = Clock()
-        clock_message.clock = Time(seconds=self.time()).to_msg()
-        self.clock_publisher.publish(clock_message)
+        #clock_message = Clock()
+        #clock_message.clock = Time(seconds=self.time()).to_msg()
+        #self.clock_publisher.publish(clock_message)
 
         # pretend we were able to follow desired states perfectly
         return states_desired

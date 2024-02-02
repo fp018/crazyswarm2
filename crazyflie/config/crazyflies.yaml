@@ -1,13 +1,13 @@
 # named list of all robots
 robots:
   drone1:
-    enabled: false
-    uri: radio://0/80/2M/E7E7E7E701
-    initial_position: [0, 0, 0]
+    enabled: true
+    uri: radio://1/80/2M/E7E7E7E701
+    initial_position: [1, 0, 0]
     type: cf21  # see robot_types
   drone2:
     enabled: true
-    uri: radio://0/80/2M/E7E7E7E702
+    uri: radio://1/80/2M/E7E7E7E702
     initial_position: [0, 1., 0]
     type: cf21  # see robot_types
   drone3:
@@ -35,7 +35,7 @@ robots:
     initial_position: [-1, 0., 0]
     type: cf21  # see robot_types
   drone6:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E706
     initial_position: [-0.24, -1.5, 0]
     type: cf21  # see robot_types
@@ -55,7 +55,7 @@ robots:
     initial_position: [-2, 0., 0]
     type: cf21  # see robot_types
   drone10:
-    enabled: true  
+    enabled: false  
     uri: radio://0/80/2M/E7E7E7E710
     initial_position: [0, 2., 0]
     type: cf21  # see robot_types
@@ -110,7 +110,7 @@ all:
       pose:
         frequency: 30 # Hz
       #odom:
-      #  frequency: 100 # Hz
+      #  frequency: 30 # Hz
     #ustom_topics:
     #  topic_name1:
     #    frequency: 10 # Hz
@@ -140,5 +140,5 @@ all:
     #  mNGyro_rollpitch: 0.4
 
   broadcasts:
-    num_repeats: 15 # number of times broadcast commands are repeated
+    num_repeats: 5 # number of times broadcast commands are repeated
     delay_between_repeats_ms: 1 # delay in milliseconds between individual repeats
