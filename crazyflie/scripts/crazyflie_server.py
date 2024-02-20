@@ -283,8 +283,8 @@ class CrazyflieServer(Node):
                 self._poses_changed, qos_profile
             )
             
-        timer_period = 0.1  # seconds
-        self.timer = self.create_timer(timer_period, self.run)
+        self.timer_period = 0.033  # seconds
+        self.timer = self.create_timer(self.timer_period, self.run)
         
     def run(self):
         for uri in self.status_mode.keys():
@@ -297,14 +297,22 @@ class CrazyflieServer(Node):
                 
                 setpoint = self.setpoint[uri]
                 if len(setpoint):
-                    self.ai[uri][0] = self.ai[uri][0] + 0.01*(setpoint[1][0] - self.twist[uri].linear.x)
-                    self.ai[uri][1] = self.ai[uri][1] + 0.01*(setpoint[1][1]- self.twist[uri].linear.y)
-                    self.ai[uri][2] = self.ai[uri][2] + 0.01*(setpoint[1][2] - self.twist[uri].linear.z)
+                    vx, vy, vz = (setpoint[1][0], setpoint[1][1], setpoint[1][2])
+                    self.ai[uri][0] = self.ai[uri][0] + self.timer_period*(vx - self.twist[uri].linear.x)
+                    self.ai[uri][1] = self.ai[uri][1] + self.timer_period*(vy - self.twist[uri].linear.y)
+                    self.ai[uri][2] = self.ai[uri][2] + self.timer_period*(vz - self.twist[uri].linear.z)
+                    
+                    
+                    x = self.poses[uri].position.x + vx*self.timer_period
+                    y = self.poses[uri].position.y + vy*self.timer_period
+                    z = self.poses[uri].position.z + vz*self.timer_period
+                    
+                    setpoint[0] = [x,y,z]
                     
                     self.ai[uri] = np.clip(self.ai[uri], -0.02,0.02)
                     
-                    #self.swarm._cfs[uri].cf.commander.send_full_state_setpoint(*setpoint)
-                    self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(setpoint[1][0],setpoint[1][1],setpoint[1][2],setpoint[-1])
+                    self.swarm._cfs[uri].cf.commander.send_full_state_setpoint(*setpoint)
+                    #self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(setpoint[1][0],setpoint[1][1],setpoint[1][2],setpoint[-1])
     
                 
  
@@ -920,15 +928,10 @@ class CrazyflieServer(Node):
             #vx = vx + (vx - self.twist[uri].linear.x)*2
             #vy = vy + (vy - self.twist[uri].linear.y)*2
             #vz = vz + (vz - self.twist[uri].linear.z)*2
-            
-            x = self.poses[uri].position.x + vx*0.01
-            y = self.poses[uri].position.y + vy*0.01
-            z = self.poses[uri].position.z + vz*0.01
-            
-            ax = 0.1#*(vx - self.twist[uri].linear.x) + 0.01*self.ai[uri][0]
-            ay = 0.1#*(vy - self.twist[uri].linear.y) + 0.01*self.ai[uri][1]
-            az = 0.1#*(vz - self.twist[uri].linear.z) + 0.01*self.ai[uri][2]
-            self.setpoint[uri] = [[x,y,z], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate]
+            ax = 1*(vx - self.twist[uri].linear.x) #+ 0.01*self.ai[uri][0]
+            ay = 1.*(vy - self.twist[uri].linear.y) #+ 0.01*self.ai[uri][1]
+            az = 1.*(vz - self.twist[uri].linear.z) #+ 0.01*self.ai[uri][2]
+            self.setpoint[uri] = [[0.,0.,0.], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate]
             
             
             #self.get_logger().info(f"{uri}: vel {self.twist[uri].linear.x} {self.twist[uri].linear.y} {self.twist[uri].linear.z} {yawrate}")
