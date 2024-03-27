@@ -20,7 +20,7 @@ class Backend:
     def time(self) -> float:
         return self.node.get_clock().now().nanoseconds*1e-9-self.t
 
-    def step(self, states_desired: list[State], actions: list[Action]) -> list[State]:
+    def step(self, states_desired: list[State], actions: list[Action], name) -> list[State]:
         # advance the time
         #self.t = self.node.get_clock().now().seconds_nanoseconds()[0]
 

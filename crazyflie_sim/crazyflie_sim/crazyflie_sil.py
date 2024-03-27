@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import cffirmware as firm
 import numpy as np
-import rowan
-
+from scipy.spatial.transform import Rotation
+#import rowan
+from crazyflie_sim.c_modules.crazyflie_sil_c import acc2quat
+import time
 from . import sim_data_types
 
 
@@ -241,6 +243,7 @@ class CrazyflieSIL:
     #     pass
 
     def getSetpoint(self, max_dt):
+        
         if self.mode == CrazyflieSIL.MODE_HIGH_POLY or self.mode == CrazyflieSIL.MODE_HIGH_LAND:
             # See logic in crtp_commander_high_level.c
             ev = firm.plan_current_goal(self.planner, self.time_func())
@@ -271,21 +274,33 @@ class CrazyflieSIL:
                 self.cmdHl_yaw = ev.yaw
 
         if (self.mode == CrazyflieSIL.MODE_LOW_VELOCITY ):
-            self.setpoint.position.x += self.setpoint.velocity.x*max_dt
-            self.setpoint.position.y += self.setpoint.velocity.y*max_dt
-            self.setpoint.position.z += self.setpoint.velocity.z*max_dt
+            vx,vy,vz = (self.setpoint.velocity.x, self.setpoint.velocity.y, self.setpoint.velocity.z)
+            ax = 2.*(vx - self.state.velocity.x)
+            ay = 2.*(vy - self.state.velocity.y)
+            az = 2.*(vz - self.state.velocity.z)
+            
+            self.setpoint.position.x += 0.8*vx*max_dt
+            self.setpoint.position.y += 0.8*vy*max_dt
+            self.setpoint.position.z += 0.8*vz*max_dt
             self.setpoint.attitude.yaw = self.setpoint.attitude.yaw + self.setpoint.attitudeRate.yaw *max_dt
-            self.setpoint.mode.quat == firm.modeDisable
-            
-            
-            self.setpoint.mode.x = firm.modeVelocity
-            self.setpoint.mode.y = firm.modeVelocity
-            self.setpoint.mode.z = firm.modeVelocity
-            self.setpoint.mode.yaw = firm.modeVelocity
+            self.setpoint.attitudeRate.roll = 0.
+            self.setpoint.attitudeRate.pitch = 0.
+            self.setpoint.acceleration.x = ax
+            self.setpoint.acceleration.y = ay
+            self.setpoint.acceleration.z = az
+            self.setpoint.mode.x = firm.modeAbs
+            self.setpoint.mode.y = firm.modeAbs
+            self.setpoint.mode.z = firm.modeAbs
+            self.setpoint.mode.yaw = firm.modeAbs
+            self.setpoint.mode.roll = firm.modeDisable
+            self.setpoint.mode.pitch = firm.modeDisable
+            self.setpoint.mode.yaw = firm.modeAbs
+            self.setpoint.mode.quat = firm.modeDisable
             
             self.cmdHl_pos = copy_svec(self.setpoint.position)
             self.cmdHl_vel = copy_svec(self.setpoint.velocity)
             self.cmdHl_yaw = self.setpoint.attitude.yaw
+        
         return self._fwsetpoint_to_sim_data_types_state(self.setpoint)
 
         # # else:
@@ -309,11 +324,12 @@ class CrazyflieSIL:
         self.state.velocity.y = state.vel[1]
         self.state.velocity.z = state.vel[2]
 
-        rpy = np.degrees(rowan.to_euler(state.quat, convention='xyz'))
+        #rpy = Rotation.from_quat(state.quat).as_euler('xyz',degrees=True)
+        #rpy = np.degrees(rowan.to_euler(state.quat, convention='xyz'))
         # Note, legacy coordinate system, so invert pitch
-        self.state.attitude.roll = rpy[0]
-        self.state.attitude.pitch = -rpy[1]
-        self.state.attitude.yaw = rpy[2]
+        #self.state.attitude.roll = rpy[0]
+        #self.state.attitude.pitch = -rpy[1]
+        #self.state.attitude.yaw = rpy[2]
 
         self.state.attitudeQuaternion.w = state.quat[0]
         self.state.attitudeQuaternion.x = state.quat[1]
@@ -334,9 +350,13 @@ class CrazyflieSIL:
         if self.mode == CrazyflieSIL.MODE_HIGH_POLY:
             self.is_finished()
         
+        if self.mode == CrazyflieSIL.MODE_IDLE:
+            return sim_data_types.Action([0, 0, 0, 0])
+        
         time_in_seconds = self.time_func()
         # ticks is essentially the time in milliseconds as an integer
         tick = int(time_in_seconds * 1000)
+        
         if self.controller_name != 'mellinger':
             self.controller(self.control, self.setpoint, self.sensors, self.state, tick)
         else:
@@ -392,22 +412,11 @@ class CrazyflieSIL:
             fwsetpoint.attitudeRate.roll,
             fwsetpoint.attitudeRate.pitch,
             fwsetpoint.attitudeRate.yaw]))
-
         if fwsetpoint.mode.quat == firm.modeDisable:
-            # compute rotation based on differential flatness
-            thrust = acc + np.array([0, 0, 9.81])
-            z_body = thrust / np.linalg.norm(thrust)
-            yaw = np.radians(fwsetpoint.attitude.yaw)
-            x_world = np.array([np.cos(yaw), np.sin(yaw), 0])
-            y_body = np.cross(z_body, x_world)
-            # Mathematically not needed. This addresses numerical issues to ensure R is orthogonal
-            y_body /= np.linalg.norm(y_body)
-            x_body = np.cross(y_body, z_body)
-            # Mathematically not needed. This addresses numerical issues to ensure R is orthogonal
-            x_body /= np.linalg.norm(x_body)
-            R = np.column_stack([x_body, y_body, z_body])
-            quat = rowan.from_matrix(R)
+            quat = np.zeros(4, dtype=np.float64)
+            acc2quat(acc, np.radians(fwsetpoint.attitude.yaw),quat)
         else:
             quat = fwsetpoint.attitudeQuaternion
-
+        
         return sim_data_types.State(pos, vel, quat, omega)
+

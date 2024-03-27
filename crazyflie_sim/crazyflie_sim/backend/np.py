@@ -5,8 +5,10 @@ from rclpy.node import Node
 from rclpy.time import Time
 from rosgraph_msgs.msg import Clock
 import rowan
+import time
 
 from ..sim_data_types import Action, State
+
 
 class Backend:
     """Backend that uses newton-euler rigid-body dynamics implemented in numpy."""
@@ -31,11 +33,11 @@ class Backend:
         self.t += self.dt
 
         next_states = []
-
-        for i, uav in enumerate(self.uavs):
-            uav.step(actions[i], self.dt)
+        start_time = time.time()
+        for uav, action in zip(self.uavs, actions):
+            uav.step(action, self.dt)
             next_states.append(uav.state)
-
+        print("Time taken for one step: ", time.time() - start_time)
         # print(states_desired, actions, next_states)
         # publish the current clock
         clock_message = Clock()
@@ -46,7 +48,6 @@ class Backend:
 
     def shutdown(self):
         pass
-
 
 
 class Quadrotor:
@@ -81,7 +82,7 @@ class Quadrotor:
 
         self.state = state
 
-    def step(self, action, dt):
+    def step(self, action, dt, f_a=np.zeros(3)):
 
         # convert RPM -> Force
         def rpm_to_force(rpm):
@@ -101,19 +102,21 @@ class Quadrotor:
         # dynamics
         # dot{p} = v
         pos_next = self.state.pos + self.state.vel * dt
-        # mv = mg + R f_u
+        # mv = mg + R f_u + f_a
         vel_next = self.state.vel + (
             np.array([0, 0, -self.g]) +
-            rowan.rotate(self.state.quat, f_u) / self.mass) * dt
+            (rowan.rotate(self.state.quat, f_u) + f_a) / self.mass) * dt
 
         # dot{R} = R S(w)
         # to integrate the dynamics, see
         # https://www.ashwinnarayan.com/post/how-to-integrate-quaternions/, and
         # https://arxiv.org/pdf/1604.08139.pdf
+        # Sec 4.5, https://arxiv.org/pdf/1711.02508.pdf
+        omega_global = rowan.rotate(self.state.quat, self.state.omega)
         q_next = rowan.normalize(
             rowan.calculus.integrate(
-                self.state.quat, self.state.omega, dt))
-        
+                self.state.quat, omega_global, dt))
+
         # mJ = Jw x w + tau_u
         omega_next = self.state.omega + (
             self.inv_J * (np.cross(self.J * self.state.omega, self.state.omega) + tau_u)) * dt
