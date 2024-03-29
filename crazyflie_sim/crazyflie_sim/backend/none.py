@@ -14,11 +14,11 @@ class Backend:
         self.node = node
         self.names = names
         self.clock_publisher = node.create_publisher(Clock, 'clock', 10)
-        self.t = self.node.get_clock().now().nanoseconds*1e-9
+        self.t = 0.
         self.dt = 0.001
 
     def time(self) -> float:
-        return self.node.get_clock().now().nanoseconds*1e-9-self.t
+        return self.t
 
     def step(self, states_desired: list[State], actions: list[Action], name) -> list[State]:
         # advance the time

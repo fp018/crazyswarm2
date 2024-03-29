@@ -1,7 +1,7 @@
 # named list of all robots
 robots:
   drone1:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E701
     initial_position: [1, 0, 0]
     type: cf21  # see robot_types
@@ -16,7 +16,7 @@ robots:
     initial_position: [0, -1., 0]
     type: cf21  # see robot_types
   drone4:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E704
     initial_position: [1, 0., 0]
     type: cf21  # see robot_types
@@ -35,13 +35,13 @@ robots:
     initial_position: [-1, 0., 0]
     type: cf21  # see robot_types
   drone6:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E706
     initial_position: [-0.24, -1.5, 0]
     type: cf21  # see robot_types
   drone7:
     enabled: true
-    uri: radio://0/80/2M/E7E7E7E707
+    uri: radio://1/80/2M/E7E7E7E707
     initial_position: [-1., -1., 0]
     type: cf21  # see robot_types
   drone8:
@@ -56,7 +56,7 @@ robots:
     type: cf21  # see robot_types
   drone10:
     enabled: true  
-    uri: radio://0/80/2M/E7E7E7E710
+    uri: radio://1/80/2M/E7E7E7E710
     initial_position: [0, 2., 0]
     type: cf21  # see robot_types
 # Definition of the various robot types
@@ -138,10 +138,10 @@ all:
     #kalman:
     #  pNVel: 0.3
     #  mNGyro_rollpitch: 0.4
-    ctrlMel:
-      kd_xy: 0.34
-      kd_z: 0.43
-      mass: 0.034
+    #ctrlMel:
+      #kd_xy: 0.34
+      #kd_z: 0.43
+      #mass: 0.034
 
   broadcasts:
     num_repeats: 5 # number of times broadcast commands are repeated

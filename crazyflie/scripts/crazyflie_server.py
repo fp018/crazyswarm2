@@ -303,9 +303,9 @@ class CrazyflieServer(Node):
                     self.ai[uri][2] = self.ai[uri][2] + self.timer_period*(vz - self.twist[uri].linear.z)
                     
                     
-                    x = self.poses[uri].position.x + vx*self.timer_period
-                    y = self.poses[uri].position.y + vy*self.timer_period
-                    z = self.poses[uri].position.z + vz*self.timer_period
+                    x = self.poses[uri].position.x + 0.7*vx*self.timer_period
+                    y = self.poses[uri].position.y + 0.7*vy*self.timer_period
+                    z = self.poses[uri].position.z + 0.7*vz*self.timer_period
                     
                     setpoint[0] = [x,y,z]
                     
@@ -928,9 +928,9 @@ class CrazyflieServer(Node):
             #vx = vx + (vx - self.twist[uri].linear.x)*2
             #vy = vy + (vy - self.twist[uri].linear.y)*2
             #vz = vz + (vz - self.twist[uri].linear.z)*2
-            ax = 1*(vx - self.twist[uri].linear.x) #+ 0.01*self.ai[uri][0]
-            ay = 1.*(vy - self.twist[uri].linear.y) #+ 0.01*self.ai[uri][1]
-            az = 1.*(vz - self.twist[uri].linear.z) #+ 0.01*self.ai[uri][2]
+            ax = 1.4*(vx - self.twist[uri].linear.x) #+ 0.01*self.ai[uri][0]
+            ay = 1.4*(vy - self.twist[uri].linear.y) #+ 0.01*self.ai[uri][1]
+            az = 1.4*(vz - self.twist[uri].linear.z) #+ 0.01*self.ai[uri][2]
             self.setpoint[uri] = [[0.,0.,0.], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate]
             
             
