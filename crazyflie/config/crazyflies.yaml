@@ -1,24 +1,24 @@
 # named list of all robots
 robots:
   drone1:
-    enabled: false
-    uri: radio://0/80/2M/E7E7E7E701
-    initial_position: [1, 0, 0]
+    enabled: true
+    uri: radio://1/80/2M/E7E7E7E701
+    initial_position: [2, 0, 0]
     type: cf21  # see robot_types
   drone2:
-    enabled: false
-    uri: radio://0/80/2M/E7E7E7E702
+    enabled: true
+    uri: radio://1/80/2M/E7E7E7E702
     initial_position: [0, 1., 0]
     type: cf21  # see robot_types
   drone3:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E703
-    initial_position: [0, -1., 0]
+    initial_position: [0, -1.5, 0]
     type: cf21  # see robot_types
   drone4:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E704
-    initial_position: [1, 0., 0]
+    initial_position: [1, 1., 0]
     type: cf21  # see robot_types
     #firmware_logging:
     #  enabled: true
@@ -40,12 +40,12 @@ robots:
     initial_position: [-0.24, -1.5, 0]
     type: cf21  # see robot_types
   drone7:
-    enabled: true
-    uri: radio://1/80/2M/E7E7E7E707
+    enabled: false
+    uri: radio://0/80/2M/E7E7E7E707
     initial_position: [-1., -1., 0]
     type: cf21  # see robot_types
   drone8:
-    enabled: true
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E708
     initial_position: [0, 0., 0]
     type: cf21  # see robot_types
@@ -56,7 +56,7 @@ robots:
     type: cf21  # see robot_types
   drone10:
     enabled: true  
-    uri: radio://1/80/2M/E7E7E7E710
+    uri: radio://0/80/2M/E7E7E7E710
     initial_position: [0, 2., 0]
     type: cf21  # see robot_types
 # Definition of the various robot types
