@@ -168,7 +168,7 @@ class CrazyflieServer(Node):
         # step as fast as possible
         self.max_dt = 0.0 if 'max_dt' not in self._ros_parameters['sim'] \
             else self._ros_parameters['sim']['max_dt']
-        print(self.max_dt)
+        #print(self.max_dt)
         self.timer = self.create_timer(self.max_dt, self._timer_callback)
         self.timer_t = self.create_timer(0.05, self._timer_t)
         
@@ -225,7 +225,7 @@ class CrazyflieServer(Node):
             #for vis in self.visualizations:
             #    vis.step(self.backend.time(), states_next, states_desired, actions)
         
-        print("Time taken for one step: ", time.time() - start_time)
+        #print("Time taken for one step: ", time.time() - start_time)
         
     def _param_to_dict(self, param_ros):
         """Turn ROS 2 parameters from the node into a dict."""
