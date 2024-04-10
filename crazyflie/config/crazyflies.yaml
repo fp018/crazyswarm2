@@ -1,12 +1,12 @@
 # named list of all robots
 robots:
   drone1:
-    enabled: true
+    enabled: false
     uri: radio://1/80/2M/E7E7E7E701
     initial_position: [2, 0, 0]
     type: cf21  # see robot_types
   drone2:
-    enabled: true
+    enabled: false
     uri: radio://1/80/2M/E7E7E7E702
     initial_position: [0, 1., 0]
     type: cf21  # see robot_types
@@ -45,7 +45,7 @@ robots:
     initial_position: [-1., -1., 0]
     type: cf21  # see robot_types
   drone8:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E708
     initial_position: [0, 0., 0]
     type: cf21  # see robot_types
