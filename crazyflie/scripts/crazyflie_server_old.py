@@ -83,9 +83,8 @@ class CrazyflieServer(Node):
         self.takeoff_height = {}
         self.poses ={}
         self.twist = {}
+        self.ai = {}
         self.setpoint = {}
-        
-      
         
         # Assign default topic types, variables and callbacks
         self.default_log_type = {"pose": Pose,
@@ -146,6 +145,7 @@ class CrazyflieServer(Node):
             self.takeoff_height[link_uri] = 0.
             self.poses[link_uri] = Pose()
             self.twist[link_uri] = Twist()
+            self.ai[link_uri] = np.zeros(3)
             self.setpoint[link_uri] = []
             self.swarm._cfs[link_uri].logging = {}
 
@@ -297,27 +297,23 @@ class CrazyflieServer(Node):
                 
                 setpoint = self.setpoint[uri]
                 if len(setpoint):
-                    vx, vy, vz = (setpoint[1][0],setpoint[1][1],setpoint[1][2])
+                    vx, vy, vz = (setpoint[1][0], setpoint[1][1], setpoint[1][2])
+                    self.ai[uri][0] = self.ai[uri][0] + self.timer_period*(vx - self.twist[uri].linear.x)
+                    self.ai[uri][1] = self.ai[uri][1] + self.timer_period*(vy - self.twist[uri].linear.y)
+                    self.ai[uri][2] = self.ai[uri][2] + self.timer_period*(vz - self.twist[uri].linear.z)
                     
-                    ax = 1.4*(vx - self.twist[uri].linear.x) 
-                    ay = 1.4*(vy - self.twist[uri].linear.y)
-                    az = 1.4*(vz - self.twist[uri].linear.z)                  
                     
-                    x = setpoint[0][0] + 0.7*vx*self.timer_period
-                    y = setpoint[0][1] + 0.7*vy*self.timer_period
-                    z = setpoint[0][2] + 0.7*vz*self.timer_period
+                    x = self.poses[uri].position.x + 0.7*vx*self.timer_period
+                    y = self.poses[uri].position.y + 0.7*vy*self.timer_period
+                    z = self.poses[uri].position.z + 0.7*vz*self.timer_period
                     
                     setpoint[0] = [x,y,z]
-                    setpoint[2] = [ax,ay,az]
+                    
+                    self.ai[uri] = np.clip(self.ai[uri], -0.02,0.02)
                     
                     self.swarm._cfs[uri].cf.commander.send_full_state_setpoint(*setpoint)
                     #self.swarm._cfs[uri].cf.commander.send_velocity_world_setpoint(setpoint[1][0],setpoint[1][1],setpoint[1][2],setpoint[-1])
-            else:
-                self.setpoint[uri] = [[self.poses[uri].position.x,self.poses[uri].position.y,self.poses[uri].position.z],
-                                      [0.,0.,0.],
-                                      [0., 0., 0.],
-                                      [0.,0.,0.,1.],
-                                      0., 0., 0.]
+    
                 
  
     def _init_default_logblocks(self, prefix, link_uri, list_logvar, global_logging_enabled, topic_type):
@@ -549,7 +545,7 @@ class CrazyflieServer(Node):
         t_base.transform.rotation.y = q[1]
         t_base.transform.rotation.z = q[2]
         t_base.transform.rotation.w = q[3]
-        #self.tfbr.sendTransform(t_base)
+        self.tfbr.sendTransform(t_base)
 
     def _log_odom_data_callback(self, timestamp, data, logconf, uri):
         """
@@ -605,7 +601,7 @@ class CrazyflieServer(Node):
         t_base.transform.rotation.y = q[1]
         t_base.transform.rotation.z = q[2]
         t_base.transform.rotation.w = q[3]
-        #self.tfbr.sendTransform(t_base)
+        self.tfbr.sendTransform(t_base)
 
     def _log_custom_data_callback(self, timestamp, data, logconf, uri):
         """
@@ -804,23 +800,17 @@ class CrazyflieServer(Node):
             + f"duration={duration} s,"
             + f"group_mask={request.group_mask})"
         )
-        
-        dynamic_duration=duration
-        
         if uri == "all":
             for link_uri in self.uris:
                 self._notify_setpoints_stop_callback(request, response, uri=link_uri)
                 self.swarm._cfs[link_uri].cf.high_level_commander.land(
-                    request.height, dynamic_duration, group_mask=request.group_mask
+                    request.height, duration, group_mask=request.group_mask
                 )
                 self.status_mode[link_uri] = MODE_LAND
         else:
             self._notify_setpoints_stop_callback(request, response, uri=uri)
-            if self.poses[uri].position.z > 1.0:
-                dynamic_duration = (self.poses[uri].position.z-1.0)/1.2+duration
-                
             self.swarm._cfs[uri].cf.high_level_commander.land(
-                request.height, dynamic_duration, group_mask=request.group_mask
+                request.height, duration, group_mask=request.group_mask
             )
             self.status_mode[uri] = MODE_LAND
             
@@ -908,7 +898,7 @@ class CrazyflieServer(Node):
             if name in self.uri_dict.keys():
                 uri = self.uri_dict[name]
                 #self.get_logger().info(f"{uri}: send extpos {x}, {y}, {z} to {name}")
-                if isnan(quat.x): 
+                if isnan(quat.x):
                     self.swarm._cfs[uri].cf.extpos.send_extpos(
                         x, y, z)
                 else:
@@ -934,7 +924,14 @@ class CrazyflieServer(Node):
             vy = msg.linear.y 
             vz = msg.linear.z 
             yawrate = msg.angular.z
-            self.setpoint[uri] = [self.setpoint[uri][0], [vx,vy,vz], [0., 0., 0.], [0.,0.,0.,1.], 0., 0., yawrate]
+            
+            #vx = vx + (vx - self.twist[uri].linear.x)*2
+            #vy = vy + (vy - self.twist[uri].linear.y)*2
+            #vz = vz + (vz - self.twist[uri].linear.z)*2
+            ax = 1.4*(vx - self.twist[uri].linear.x) #+ 0.01*self.ai[uri][0]
+            ay = 1.4*(vy - self.twist[uri].linear.y) #+ 0.01*self.ai[uri][1]
+            az = 1.4*(vz - self.twist[uri].linear.z) #+ 0.01*self.ai[uri][2]
+            self.setpoint[uri] = [[0.,0.,0.], [vx,vy,vz], [ax, ay, az], [0.,0.,0.,1.], 0., 0., yawrate]
             
             
             #self.get_logger().info(f"{uri}: vel {self.twist[uri].linear.x} {self.twist[uri].linear.y} {self.twist[uri].linear.z} {yawrate}")
