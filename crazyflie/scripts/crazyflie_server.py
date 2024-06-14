@@ -520,7 +520,8 @@ class CrazyflieServer(Node):
         y = data.get('stateEstimate.y')
         z = data.get('stateEstimate.z')
         roll = radians(data.get('stabilizer.roll'))
-        pitch = radians(-1.0 * data.get('stabilizer.pitch'))
+        #pitch = radians(-1.0 * data.get('stabilizer.pitch'))
+        pitch = radians(data.get('stabilizer.pitch'))
         yaw = radians(data.get('stabilizer.yaw'))
         q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
 

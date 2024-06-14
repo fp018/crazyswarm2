@@ -3,7 +3,7 @@ robots:
   drone1:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E701
-    initial_position: [2, 0, 0]
+    initial_position: [-1, -1, 0]
     type: cf21  # see robot_types
   drone2:
     enabled: false
@@ -32,7 +32,7 @@ robots:
   drone5:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E705
-    initial_position: [-1, 0., 0]
+    initial_position: [0.2, 2., 0]
     type: cf21  # see robot_types
   drone6:
     enabled: false
@@ -47,12 +47,12 @@ robots:
   drone8:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E708
-    initial_position: [0, 0., 0]
+    initial_position: [0.8, -1.5, 0]
     type: cf21  # see robot_types
   drone9:
     enabled: true
     uri: radio://0/80/2M/E7E7E7E719
-    initial_position: [-2, 0., 0]
+    initial_position: [-2, 0.5, 0]
     type: cf21  # see robot_types
   drone10:
     enabled: false  
@@ -108,15 +108,15 @@ all:
     default_topics:
      # remove to disable default topic
       pose:
-        frequency: 30 # Hz
+        frequency: 50 # Hz
       odom:
-        frequency: 30 # Hz
-    #ustom_topics:
+        frequency: 50 # Hz
+    #custom_topics:
     #  topic_name1:
     #    frequency: 10 # Hz
     #    vars: ["stateEstimateZ.x", "stateEstimateZ.y", "stateEstimateZ.z", "pm.vbat"]
     #  topic_name2:
-    #    frequency: 1 # Hz
+    #    frequency: 100 # Hz
     #    vars: ["stabilizer.roll", "stabilizer.pitch", "stabilizer.yaw"]
   # firmware parameters for all drones (use robot_types/type_name to set per type, or
   # robots/drone_name to set per drone)
@@ -135,9 +135,9 @@ all:
     locSrv:
       extPosStdDev: 1e-3
       extQuatStdDev: 0.5e-1
-    #kalman:
+    kalman:
     #  pNVel: 0.3
-    #  mNGyro_rollpitch: 0.4
+      mNGyro_rollpitch: 0.13
     #ctrlMel:
       #kd_xy: 0.34
       #kd_z: 0.43

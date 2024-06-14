@@ -170,7 +170,7 @@ class CrazyflieServer(Node):
             else self._ros_parameters['sim']['max_dt']
         #print(self.max_dt)
         self.timer = self.create_timer(self.max_dt, self._timer_callback)
-        self.timer_t = self.create_timer(0.05, self._timer_t)
+        self.timer_t = self.create_timer(0.02, self._timer_t)
         
         self.is_shutdown = False
 
