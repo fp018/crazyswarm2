@@ -10,7 +10,7 @@ from __future__ import annotations
 import cffirmware as firm
 import numpy as np
 from scipy.spatial.transform import Rotation
-#import rowan
+import rowan
 from crazyflie_sim.c_modules.crazyflie_sil_c import acc2quat
 import time
 from . import sim_data_types
@@ -218,11 +218,13 @@ class CrazyflieSIL:
         self.cmdHl_yaw = yaw
     
     def cmdWorldVel(self, vel, yawrate):
+      
         if (self.mode == CrazyflieSIL.MODE_IDLE or self.mode == CrazyflieSIL.MODE_LOW_VELOCITY ):
             self.mode = CrazyflieSIL.MODE_LOW_VELOCITY
             self.setpoint.velocity.x = vel[0]
             self.setpoint.velocity.y = vel[1]
             self.setpoint.velocity.z = vel[2]
+
             self.setpoint.attitudeRate.yaw = np.degrees(yawrate)
         
         
@@ -275,13 +277,13 @@ class CrazyflieSIL:
 
         if (self.mode == CrazyflieSIL.MODE_LOW_VELOCITY ):
             vx,vy,vz = (self.setpoint.velocity.x, self.setpoint.velocity.y, self.setpoint.velocity.z)
-            ax = 2.*(vx - self.state.velocity.x)
-            ay = 2.*(vy - self.state.velocity.y)
-            az = 2.*(vz - self.state.velocity.z)
+            ax = 0.*(2.*(vx - self.state.velocity.x))
+            ay = 0.*(2.*(vy - self.state.velocity.y)) 
+            az = 0.*(2.*(vz - self.state.velocity.z)) 
             
-            self.setpoint.position.x += 0.8*vx*max_dt
-            self.setpoint.position.y += 0.8*vy*max_dt
-            self.setpoint.position.z += 0.8*vz*max_dt
+            self.setpoint.position.x += 1.*vx*max_dt # 0.8
+            self.setpoint.position.y += 1.*vy*max_dt 
+            self.setpoint.position.z += 1.*vz*max_dt 
             self.setpoint.attitude.yaw = self.setpoint.attitude.yaw + self.setpoint.attitudeRate.yaw *max_dt
             self.setpoint.attitudeRate.roll = 0.
             self.setpoint.attitudeRate.pitch = 0.
@@ -419,4 +421,56 @@ class CrazyflieSIL:
             quat = fwsetpoint.attitudeQuaternion
         
         return sim_data_types.State(pos, vel, quat, omega)
+    # @staticmethod
+    # def _fwsetpoint_to_sim_data_types_state(fwsetpoint):
 
+    #     pos = np.array(
+    #         [
+    #             fwsetpoint.position.x,
+    #             fwsetpoint.position.y,
+    #             fwsetpoint.position.z,
+    #         ]
+    #     )
+    #     vel = np.array(
+    #         [
+    #             fwsetpoint.velocity.x,
+    #             fwsetpoint.velocity.y,
+    #             fwsetpoint.velocity.z,
+    #         ]
+    #     )
+    #     acc = np.array(
+    #         [
+    #             fwsetpoint.acceleration.x,
+    #             fwsetpoint.acceleration.y,
+    #             fwsetpoint.acceleration.z,
+    #         ]
+    #     )
+    #     omega = np.radians(
+    #         np.array(
+    #             [
+    #                 fwsetpoint.attitudeRate.roll,
+    #                 fwsetpoint.attitudeRate.pitch,
+    #                 fwsetpoint.attitudeRate.yaw,
+    #             ]
+    #         )
+    #     )
+    #     if fwsetpoint.mode.quat == firm.modeDisable:
+    #         quat = np.zeros(4, dtype=np.float64)
+    #         #acc2quat(acc, np.radians(fwsetpoint.attitude.yaw), quat)
+    #         thrust = acc + np.array([0, 0, 9.81])
+    #         z_body = thrust / np.linalg.norm(thrust)
+    #         yaw = np.radians(fwsetpoint.attitude.yaw)
+    #         x_world = np.array([np.cos(yaw), np.sin(yaw), 0])
+    #         y_body = np.cross(z_body, x_world)
+    #         # Mathematically not needed. This addresses numerical issues to ensure R is orthogonal
+    #         y_body /= np.linalg.norm(y_body)
+    #         x_body = np.cross(y_body, z_body)
+    #         # Mathematically not needed. This addresses numerical issues to ensure R is orthogonal
+    #         x_body /= np.linalg.norm(x_body)
+    #         R = np.column_stack([x_body, y_body, z_body])
+    #         quat = rowan.from_matrix(R)
+    #     else:
+    #         quat = fwsetpoint.attitudeQuaternion
+
+    #     return sim_data_types.State(pos, vel, quat, omega)
+    

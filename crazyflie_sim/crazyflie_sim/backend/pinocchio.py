@@ -101,9 +101,10 @@ class Quadrotor:
         # max_f: 1.3
         force_in_newton = rpm_to_force(action.rpm)
         eta = np.dot(self.B0, force_in_newton)
-        force_generalized = np.array([0., 0., eta[0], eta[1], eta[2], eta[3]])
-
+          
+        force_generalized = np.array([0., 0., eta[0], eta[1], eta[2], eta[3]])             
         q, v = sim_state2pinocchio_state(self.state)
+        
         a = pin.aba(self.uav, self.uavPinocchioData, q, v, force_generalized)
         v_next = v + a*dt
         q_next = pin.integrate(self.uav, q, v*dt)
@@ -114,4 +115,3 @@ class Quadrotor:
             self.state.pos[2] = 0
             self.state.vel = [0, 0, 0]
             self.state.omega = [0, 0, 0]
-        

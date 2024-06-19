@@ -283,13 +283,13 @@ class CrazyflieServer(Node):
                 self._poses_changed, qos_profile
             )
             
-        self.timer_period = 0.033  # seconds
+        self.timer_period = 0.033 #0.033  # seconds
         self.timer = self.create_timer(self.timer_period, self.run)
         
     def run(self):
         for uri in self.status_mode.keys():
             if self.status_mode[uri] == MODE_TAKEOFF:
-                if self.poses[uri].position.z > self.takeoff_height[uri]-0.1:
+                if self.poses[uri].position.z > self.takeoff_height[uri]-0.05:
                     self.status_mode[uri] = MODE_VELOCITY
                     
 
@@ -303,9 +303,9 @@ class CrazyflieServer(Node):
                     ay = 1.4*(vy - self.twist[uri].linear.y)
                     az = 1.4*(vz - self.twist[uri].linear.z)                  
                     
-                    x = setpoint[0][0] + 0.7*vx*self.timer_period
-                    y = setpoint[0][1] + 0.7*vy*self.timer_period
-                    z = setpoint[0][2] + 0.7*vz*self.timer_period
+                    x = setpoint[0][0] + 1.0*vx*self.timer_period
+                    y = setpoint[0][1] + 1.0*vy*self.timer_period
+                    z = setpoint[0][2] + 1.0*vz*self.timer_period
                     
                     setpoint[0] = [x,y,z]
                     setpoint[2] = [ax,ay,az]
@@ -520,14 +520,14 @@ class CrazyflieServer(Node):
         y = data.get('stateEstimate.y')
         z = data.get('stateEstimate.z')
         roll = radians(data.get('stabilizer.roll'))
-        #pitch = radians(-1.0 * data.get('stabilizer.pitch'))
-        pitch = radians(data.get('stabilizer.pitch'))
+        pitch = radians(-1.0 * data.get('stabilizer.pitch'))
+        #pitch = radians(data.get('stabilizer.pitch'))
         yaw = radians(data.get('stabilizer.yaw'))
         q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
 
         msg = Pose()
         #msg.header.stamp = self.get_clock().now().to_msg()
-        #msg.header.frame_id = self.world_tf_name
+        #msg.header.frame_id = self.world_tf_name #<-- uncommented
         msg.position.x = x
         msg.position.y = y
         msg.position.z = z
