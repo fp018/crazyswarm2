@@ -19,6 +19,7 @@ from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 from std_srvs.srv import Empty
 from geometry_msgs.msg import Pose
+from nav_msgs.msg import Odometry as Odom
 import time
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
@@ -163,7 +164,8 @@ class CrazyflieServer(Node):
                 partial(self._cmd_full_state_changed, name=name),
                 1
             )
-            self.drone_pub[name] = self.create_publisher(Pose, name + '/pose', 10)
+            #self.drone_pub[name] = self.create_publisher(Pose, name + '/pose', 10)
+            self.drone_pub[name] = self.create_publisher(Odom, name + '/odom', 10)
 
         # step as fast as possible
         self.max_dt = 0.0 if 'max_dt' not in self._ros_parameters['sim'] \
@@ -184,21 +186,21 @@ class CrazyflieServer(Node):
 
     def _timer_t(self):
         for name, _ in self.cfs.items():
-            pose_msg = Pose()
+            odom_msg = Odom()
             state = self.cfs[name].state
-            pose_msg.position.x = state.position.x
-            pose_msg.position.y = state.position.y
-            pose_msg.position.z = state.position.z
-            pose_msg.orientation.x = state.attitudeQuaternion.x
-            pose_msg.orientation.y = state.attitudeQuaternion.y
-            pose_msg.orientation.z = state.attitudeQuaternion.z
-            pose_msg.orientation.w = state.attitudeQuaternion.w
+            odom_msg.pose.pose.position.x = state.position.x
+            odom_msg.pose.pose.position.y = state.position.y
+            odom_msg.pose.pose.position.z = state.position.z
+            odom_msg.pose.pose.orientation.x = state.attitudeQuaternion.x
+            odom_msg.pose.pose.orientation.y = state.attitudeQuaternion.y
+            odom_msg.pose.pose.orientation.z = state.attitudeQuaternion.z
+            odom_msg.pose.pose.orientation.w = state.attitudeQuaternion.w
             
-            self.drone_pub[name].publish(pose_msg)
+            self.drone_pub[name].publish(odom_msg)
     
     def _timer_callback(self):
         start_time = time.time()
-                
+        
         self.backend.t += self.backend.dt 
         for name, _ in self.cfs.items():
             # update setpoint

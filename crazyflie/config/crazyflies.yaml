@@ -11,7 +11,7 @@ robots:
     initial_position: [0, 1., 0]
     type: cf21  # see robot_types
   drone3:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E703
     initial_position: [0, -1.5, 0]
     type: cf21  # see robot_types
@@ -40,12 +40,12 @@ robots:
     initial_position: [-0.24, -1.5, 0]
     type: cf21  # see robot_types
   drone7:
-    enabled: false
+    enabled: true
     uri: radio://2/76/2M/E7E7E7E707
     initial_position: [-1., 1., 0]
     type: cf21  # see robot_types
   drone8:
-    enabled: false
+    enabled: true
     uri: radio://0/72/2M/E7E7E7E708
     initial_position: [0.8, -1.5, 0]
     type: cf21  # see robot_types
