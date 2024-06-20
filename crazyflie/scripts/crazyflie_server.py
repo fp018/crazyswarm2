@@ -567,7 +567,7 @@ class CrazyflieServer(Node):
         pitch = radians(data.get('stabilizer.pitch'))
         vx = data.get('kalman.statePX')
         vy = data.get('kalman.statePY')
-        vz = data.get('kalman.statePY')
+        vz = data.get('kalman.statePZ')
         yawrate = data.get('gyro.z')
         rollrate = data.get('gyro.x')
         pitchrate = data.get('gyro.y')
